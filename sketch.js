@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const path = require('path');
 const rough = require('roughjs');
 const jsdom = require('jsdom');
 
+const FONTS = fs.readFileSync(path.resolve(__dirname, 'font.css'));
+
 /*
- * Ripped off https://sketchviz.com
+ * This file is almost entirely ripped off https://sketchviz.com.
+ * Credit where credit is due, please go support them !
  */
 
 var coarse = (function () {
@@ -136,7 +140,28 @@ var coarse = (function () {
     }
 })();
 
+function preprocess(data) {
+    /*
+     * Pre-process the data.
+     */
+    data = data.replace(/(<svg(?:[^>]|\n)*>)/, '$1' + FONTS);
+    // Use the open source Tinos font, not Times, so that we can get
+    // reproducible renders on different OSes.
+    data = data.replace(/font-family="Times,serif"/g, 'font-family="Tinos,serif"');
+
+    // Auto-bold: Replace any <text ...>*xxxx*</text> with
+    // <text font-family="Sedgwick Ave" ...>*xxxx*</text>
+    data = data.replace(
+        /<text ([^>]+) font-family="[^"]+" ([^>]+)>\*([^<]+)\*<\/text>/g,
+        '<text $1 font-family="Sedgwick Ave" $2>$3</text>'
+    );
+    return data;
+}
+
 function sketchy(data) {
+    /*
+     * Sketchify a svg
+     */
     const dom = new jsdom.JSDOM(data);
     var parsed = dom.window.document.querySelector('svg');
     coarse(parsed);
@@ -161,7 +186,7 @@ function main() {
             buffer += data.toString();
         });
         dot.on('close', () => {
-            let result = sketchy(buffer);
+            let result = preprocess(buffer.toString());
             fs.writeFile(output, sketchy(result), function (err) {
                 if (err) {
                     console.log(err);
