@@ -2,6 +2,9 @@
 
 const fs = require('fs');
 const path = require('path');
+
+// external dependencies
+const { program } = require('commander');
 const rough = require('roughjs');
 const jsdom = require('jsdom');
 
@@ -168,12 +171,8 @@ function sketchy(data) {
     return parsed.outerHTML;
 }
 
-function main() {
-    if (process.argv.length != 4) {
-        console.log("Usage: node sketch.js <input.dot> <output.svg>");
-        process.exit(1);
-    }
-    var args = process.argv.slice(2);
+function main(input, output, options) {
+    // Spawn dot process
     const { spawn } = require('child_process');
     function run(input, output) {
         const dot = spawn('dot', ['-Tsvg', input]);
@@ -205,14 +204,26 @@ function main() {
         });
     }
 
-    run(args[0], args[1]);
-    console.log("Now watching '" + args[0] + "' !");
-    fs.watch(args[0], (event, filename) => {
-        if (filename) {
-            console.log("File changed! Computing...");
-            run(args[0], args[1]);
-        }
-    });
+    run(input, output);
+    
+    // --watch mode
+    if (options.watch) {
+        console.log("Now watching '" + input + "' !");
+        fs.watch(input, (event, filename) => {
+            if (event == "change" && filename) {
+                console.log("File changed! Computing...");
+                run(input, output);
+            }
+        });
+    }
 }
 
-main();
+program
+    .name('sketchviz')
+    .showHelpAfterError()
+    .description('Command line clone of sketchviz.com')
+    .argument('<input>', 'the .dot input file')
+    .argument('<output>', 'the .svg output file')
+    .option('-w, --watch', 'Watch the file for changes')
+    .action(main)
+    .parse(process.argv);

@@ -1,11 +1,14 @@
 {
-  "name": "sketchviz-like",
+  "name": "sketchviz",
+  "description": "Command-line clone of sketchviz.com",
   "version": "0.0.1",
   "bin": {
-    "sketchviz": "./sketch.js"
+    "sketchviz": "./src/sketch.js"
   },
   "dependencies": {
+    "commander": "^11.1.0",
     "jsdom": "^18.0.0",
     "roughjs": "^4.4.1"
-  }
+  },
+  "license": "MIT"
 }
